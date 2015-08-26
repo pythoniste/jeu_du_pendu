@@ -20,22 +20,33 @@ int main ( int argc, char *argv[] )
 
     rand_init();
 
-    liste_mots = manage_arguments(argc, argv);
+    // Initialiser CURSES et créer les constantes pour le placement
+    // des divers éléments dans la fenêtre.
+    curses_init();
+    init_fenetre();
+
+    curses_fenetre_constantes(0);
+
+    signal(SIGWINCH, curses_fenetre_constantes);
+
+    // Ici, un message d'avertissement peut apparaître.
+    liste_mots = curses_manage_arguments(fenetre, argc, argv);
+
 
     do
     {
-        choix = menu();
+        choix = ecran_accueil(fenetre);
 
         if (choix == 1)
         {
             score = 0;
             if (liste_mots == NULL) {
-                mot = demander_mot();
-                jeu(mot);
+                mot = ecran_demander_mot(fenetre);
+                ecran_jeu(fenetre, mot);
             }
             else
             {
-                nombre_tours = choisir_niveau();
+                nombre_tours = ecran_niveau(fenetre);
                 for (numero_tour = 0 ; numero_tour < nombre_tours ; numero_tour++)
                 {
                     mot = liste_mots->mots[numero_mot_courant];
@@ -46,13 +57,10 @@ int main ( int argc, char *argv[] )
                         melanger_mots(liste_mots);
                         numero_mot_courant = 0;
                     }
-                    score += jeu(mot);
+                    score += ecran_jeu(fenetre, mot);
                 }
 
-                printf("Votre score total est %d\n\n", score);
-                printf("Votre nom: ");
-                nom_joueur = saisir_chaine();
-                printf("\n");
+                nom_joueur = ecran_resultat(fenetre, score);
 
                 switch (nombre_tours)
                 {
@@ -76,13 +84,15 @@ int main ( int argc, char *argv[] )
         }
         else if (choix == 2)
         {
-            scores(tableau_scores_1, tableau_scores_2, tableau_scores_3);
+            ecran_scores(fenetre, tableau_scores_1, tableau_scores_2, tableau_scores_3);
         }
     } while (choix != 3);
 
     db_set(database_filename, 3, tableau_scores_1);
     db_set(database_filename, 5, tableau_scores_2);
     db_set(database_filename, 10, tableau_scores_3);
+
+    curses_stop();
 
     printf("\nBye.\n");
 
